@@ -7,10 +7,11 @@ phases:
     commands:
       - echo Installing dependencies...
       - npm install
-  build:
-    commands:
-      - echo Building the application...
-      - npm run build
+    build:
+      commands:
+        - echo Building the application...
+        - npm run build
+        - ls -la # Add this to see what files/directories exist
   post_build:
     commands:
       - echo Build completed on `date`
