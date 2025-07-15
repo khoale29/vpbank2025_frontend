@@ -7,11 +7,12 @@ phases:
     commands:
       - echo Installing dependencies...
       - npm install
-    build:
-      commands:
-        - echo Building the application...
-        - npm run build
-        - ls -la # Add this to see what files/directories exist
+  build:
+    commands:
+      - echo Building the application...
+      - npm run build
+      - ls -la # List all files in the root directory
+      - ls -la build || echo "build directory not found" # Check for build directory
   post_build:
     commands:
       - echo Build completed on `date`
@@ -19,3 +20,4 @@ artifacts:
   files:
     - "**/*"
   base-directory: build
+  discard-paths: no
