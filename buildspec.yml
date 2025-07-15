@@ -5,31 +5,24 @@ phases:
     runtime-versions:
       nodejs: 18
     commands:
-      - echo "🚀 Installing project dependencies"
+      - echo Installing dependencies...
       - npm install
-
   pre_build:
     commands:
-      - echo "🎨 Initializing Tailwind CSS config"
-      - npx tailwindcss init -p
-
+      - echo Running tests...
+      - npm test
   build:
     commands:
-      - echo "🏗️ Building the React app"
+      - echo Building the application...
       - npm run build
-
   post_build:
     commands:
-      - echo "✅ Build completed"
-      - echo "📁 Contents of build directory:"
-      - ls -la build
-
+      - echo Build completed on `date`
 artifacts:
   files:
-    - "**/*"
-  base-directory: build
-  discard-paths: yes
-
+    - dist/**/*
+    - package.json
+    - node_modules/**/*
 cache:
   paths:
     - node_modules/**/*
