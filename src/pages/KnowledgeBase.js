@@ -10,6 +10,7 @@ import {
   MoveRight,
   Play,
 } from "lucide-react";
+import UploadPdfButton from "./testupload";
 
 const KnowledgeBase = () => {
   const [files, setFiles] = useState(() => {
@@ -22,6 +23,7 @@ const KnowledgeBase = () => {
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [extracting, setExtracting] = useState(false);
+  const [filex, setFilex] = useState(null);
 
   // Save files to localStorage whenever they change
   useEffect(() => {
@@ -30,6 +32,8 @@ const KnowledgeBase = () => {
 
   // Drag Handler
   const handleDrag = (e) => {
+    setFilex(e.target.files[0]);
+
     e.preventDefault();
     e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -74,7 +78,7 @@ const KnowledgeBase = () => {
         )
       );
       setUploading(false);
-    }, 2000);
+    }, 200);
   };
 
   const deleteFile = (fileId) => {
@@ -88,21 +92,48 @@ const KnowledgeBase = () => {
     return <File className="h-5 w-5 text-gray-500" />;
   };
 
-  const getStatusBadge = (status) => {
-    const handleClickbuttest = async () => {
-      console.log("clicked");
+  const getStatusBadge = (file) => {
+    const handleClickbuttest = async (file) => {
+      // console.log(file.name);
+      const LAMBDA_URL =
+        "https://ywyp18dj6c.execute-api.us-east-1.amazonaws.com/ulala/upload";
       setExtracting(true);
       try {
-        const response = await fetch("http://localhost:8000/");
-        const data = await response.json(); // or response.text() if not JSON
-        console.log("API response:", data);
-      } catch (error) {
-        console.error("Error fetching:", error);
+        console.log("🔄 Requesting presigned URL...");
+
+        // Step 1: Get presigned URL from Lambda
+        const response = await fetch(
+          `${LAMBDA_URL}?filename=${encodeURIComponent(file.name)}`
+        );
+        if (!response.ok) throw new Error("Failed to get presigned URL");
+        const data = await response.json();
+        const presignedUrl = data.url;
+
+        // Step 2: Upload to S3 via presigned URL
+        console.log("⬆️ Uploading...");
+        const uploadRes = await fetch(presignedUrl, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/pdf", // VERY important
+          },
+          body: file, // This must be the File object (raw binary)
+        });
+
+        if (!uploadRes.ok) {
+          const errorText = await uploadRes.text();
+          throw new Error(`Upload failed: ${uploadRes.status} - ${errorText}`);
+        }
+
+        console.log("✅ Upload successful!");
+      } catch (err) {
+        console.error(err);
+        console.log(`❌ Error: ${err.message}`);
       }
+
       setExtracting(false);
     };
 
-    if (status === "processed") {
+    if (file.status === "processed") {
       return (
         <div className="flex items-center gap-[10px]">
           <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
@@ -117,7 +148,7 @@ const KnowledgeBase = () => {
         </div>
       );
     }
-    if (status === "processing") {
+    if (file.status === "processing") {
       return (
         <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
           Processing
@@ -130,7 +161,6 @@ const KnowledgeBase = () => {
       </span>
     );
   };
-  const steps = ["Step 1", "Step 2", "Step 3", "Step 4"];
   return (
     <div className="min-h-[calc(100vh-64px)] bg-gray-50">
       <div className="max-w-6xl mx-auto p-6">
@@ -298,7 +328,7 @@ const KnowledgeBase = () => {
                           <p className="text-sm text-gray-500">
                             Uploaded {file.uploadDate}
                           </p>
-                          {getStatusBadge(file.status)}
+                          {getStatusBadge(file)}
                         </div>
                       </div>
                     </div>
@@ -323,6 +353,9 @@ const KnowledgeBase = () => {
             </div>
           )}
         </div>
+
+        {/* xxx */}
+        <UploadPdfButton />
       </div>
     </div>
   );
