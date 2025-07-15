@@ -10,10 +10,6 @@ phases:
 
   pre_build:
     commands:
-      - echo "🔧 Setting up environment file"
-      - if [ ! -f .env ]; then cp .env.example .env; fi
-      - echo "✅ .env ready"
-
       - echo "🎨 Initializing Tailwind CSS config"
       - npx tailwindcss init -p
 
