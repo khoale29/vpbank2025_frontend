@@ -5,16 +5,35 @@ phases:
     runtime-versions:
       nodejs: 18
     commands:
-      - echo Installing dependencies...
-      - npm ci --legacy-peer-deps
+      - echo "🚀 Installing project dependencies"
+      - npm install
+
+  pre_build:
+    commands:
+      - echo "🔧 Setting up environment file"
+      - if [ ! -f .env ]; then cp .env.example .env; fi
+      - echo "✅ .env ready"
+
+      - echo "🎨 Initializing Tailwind CSS config"
+      - npx tailwindcss init -p
 
   build:
     commands:
-      - echo Building the React app...
+      - echo "🏗️ Building the React app"
       - npm run build
+
+  post_build:
+    commands:
+      - echo "✅ Build completed"
+      - echo "📁 Contents of build directory:"
+      - ls -la build
 
 artifacts:
   files:
     - "**/*"
-  base-directory: dist
-  discard-paths: no
+  base-directory: build
+  discard-paths: yes
+
+cache:
+  paths:
+    - node_modules/**/*
