@@ -5,7 +5,6 @@ import {
   Trash2,
   Eye,
   Download,
-  Plus,
   File,
   BookOpen,
   MoveRight,

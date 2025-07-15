@@ -7,24 +7,34 @@ import {
   MessageSquare,
   Trash2,
   Edit3,
-  Menu,
-  Mic,
-  Volume2,
-  VolumeX,
 } from "lucide-react";
 
 import { sendMessageToAgent } from "../components/sendMessageToAgent";
 
 const ChatInterface = () => {
-  const [conversations, setConversations] = useState([]);
+  const [conversations, setConversations] = useState(() => {
+    const saved = localStorage.getItem("englishAI_conversations");
+    if (saved) {
+      return JSON.parse(saved);
+    }
+    return [];
+  });
 
-  const [currentConversationId, setCurrentConversationId] = useState(1);
+  const [currentConversationId, setCurrentConversationId] = useState(() => {
+    const saved = localStorage.getItem("englishAI_currentConversationId");
+    return saved
+      ? parseInt(saved)
+      : conversations.length > 0
+      ? conversations[0].id
+      : 1;
+  });
   const [inputMessage, setInputMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(
+    () => window.innerWidth >= 768
+  );
 
-  const [audioEnabled, setAudioEnabled] = useState(false);
   const messagesEndRef = useRef(null);
-  const ttsAudioRef = useRef(null);
 
   const currentConversation = conversations.find(
     (c) => c.id === currentConversationId
@@ -38,6 +48,35 @@ const ChatInterface = () => {
   useEffect(() => {
     scrollToBottom();
   }, [messages]);
+
+  // Handle window resize for responsive sidebar
+  useEffect(() => {
+    const handleResize = () => {
+      // Only auto-close sidebar on mobile, don't auto-open on desktop
+      if (window.innerWidth < 768 && sidebarOpen) {
+        setSidebarOpen(false);
+      }
+    };
+
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, [sidebarOpen]);
+
+  // Save conversations to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(
+      "englishAI_conversations",
+      JSON.stringify(conversations)
+    );
+  }, [conversations]);
+
+  // Save current conversation ID to localStorage
+  useEffect(() => {
+    localStorage.setItem(
+      "englishAI_currentConversationId",
+      currentConversationId.toString()
+    );
+  }, [currentConversationId]);
 
   const isInputValid = () => {
     try {
@@ -219,6 +258,71 @@ const ChatInterface = () => {
     e.target.style.height = Math.min(e.target.scrollHeight, 120) + "px";
   };
 
+  const startNewConversation = async () => {
+    try {
+      const { agentAPI } = await import("../services/api");
+      const session = await agentAPI.createSession();
+
+      const newConversation = {
+        id: Date.now(),
+        title: "New Conversation",
+        lastMessage: "",
+        timestamp: new Date().toLocaleString(),
+        sessionId: session.sessionId,
+        messages: [
+          {
+            id: 1,
+            text: "Hello! I'm your Bedrock AI Agent. How can I help you today?",
+            sender: "ai",
+            timestamp: new Date(),
+          },
+        ],
+      };
+
+      setConversations((prev) => [newConversation, ...prev]);
+      setCurrentConversationId(newConversation.id);
+    } catch (error) {
+      console.error("Error creating new conversation:", error);
+      // Fallback to create conversation without session
+      const newConversation = {
+        id: Date.now(),
+        title: "New Conversation",
+        lastMessage: "",
+        timestamp: new Date().toLocaleString(),
+        messages: [
+          {
+            id: 1,
+            text: "Hello! I'm your Bedrock AI Agent. How can I help you today?",
+            sender: "ai",
+            timestamp: new Date(),
+          },
+        ],
+      };
+
+      setConversations((prev) => [newConversation, ...prev]);
+      setCurrentConversationId(newConversation.id);
+    }
+  };
+
+  const deleteConversation = (conversationId) => {
+    setConversations((prev) =>
+      prev.filter((conv) => conv.id !== conversationId)
+    );
+
+    // If we're deleting the current conversation, switch to the first available one
+    if (currentConversationId === conversationId) {
+      const remainingConversations = conversations.filter(
+        (conv) => conv.id !== conversationId
+      );
+      if (remainingConversations.length > 0) {
+        setCurrentConversationId(remainingConversations[0].id);
+      } else {
+        // If no conversations left, create a new one
+        startNewConversation();
+      }
+    }
+  };
+
   const suggestedQuestions = [
     "Các thông tin cơ bản về công ty?",
     "Các bảng biểu về tài chính của 4 quý?",
@@ -228,7 +332,100 @@ const ChatInterface = () => {
 
   return (
     <div className="h-[calc(100vh-64px)] flex flex-col md:flex-row bg-gradient-to-br from-blue-50 via-white to-blue-50">
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 md:hidden backdrop-blur-sm"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
       {/* Sidebar */}
+
+      <div
+        className={`fixed md:static top-16 left-0 h-[calc(100vh-64px)] z-30 transform transition-all duration-300 bg-gradient-to-b from-blue-900 via-blue-800 to-blue-900 flex flex-col shadow-2xl
+              ${
+                sidebarOpen
+                  ? "translate-x-0 w-64 sm:w-72 md:w-80"
+                  : "-translate-x-full md:translate-x-0 md:w-0"
+              }
+            `}
+      >
+        {/* New Chat Button - Only show when sidebar is open */}
+        {sidebarOpen && (
+          <div className="p-3 md:p-4 border-b border-blue-700/50">
+            <button
+              onClick={startNewConversation}
+              className="w-full flex items-center justify-center px-3 md:px-4 py-2 md:py-3 bg-white hover:bg-blue-50 text-blue-900 rounded-xl font-semibold transition-all duration-200 shadow-lg hover:shadow-xl border-2 border-blue-200 text-sm md:text-base hover:scale-105"
+            >
+              <Plus className="h-4 w-4 md:h-5 md:w-5 mr-2" />
+              New Chat
+            </button>
+          </div>
+        )}
+
+        <div className="flex-1 overflow-y-auto dark-scrollbar">
+          <div className="p-2 space-y-1">
+            {conversations.map((conversation) => (
+              <div
+                key={conversation.id}
+                className={`group relative p-3 md:p-4 rounded-xl cursor-pointer transition-all duration-200 ${
+                  currentConversationId === conversation.id
+                    ? "bg-white/20 shadow-lg border border-blue-300/50 backdrop-blur-sm"
+                    : "hover:bg-white/10 hover:shadow-md"
+                }`}
+                onClick={() => {
+                  setCurrentConversationId(conversation.id);
+                  if (window.innerWidth < 768) {
+                    setSidebarOpen(false);
+                  }
+                }}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex-1 min-w-0 mr-2">
+                    <div className="flex items-center mb-1 md:mb-2">
+                      <MessageSquare className="h-3 w-3 md:h-4 md:w-4 text-blue-200 mr-2 md:mr-3 flex-shrink-0" />
+                      <h3 className="text-xs md:text-sm text-white truncate font-semibold">
+                        {conversation.title}
+                      </h3>
+                    </div>
+                    <p className="text-xs text-blue-100 truncate opacity-80">
+                      {conversation.lastMessage || "No messages yet"}
+                    </p>
+                  </div>
+                  <div className="flex items-center space-x-1 md:opacity-0 md:group-hover:opacity-100">
+                    <button className="p-1 md:p-2 text-blue-200 hover:text-white rounded-lg hover:bg-white/20 transition-all hover:scale-110">
+                      <Edit3 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteConversation(conversation.id);
+                      }}
+                      className="p-1 md:p-2 text-blue-200 hover:text-red-300 rounded-lg hover:bg-white/20 transition-all hover:scale-110"
+                    >
+                      <Trash2 className="h-3 w-3 md:h-3.5 md:w-3.5" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="p-3 md:p-4 border-t border-blue-700/50">
+          <div className="flex items-center space-x-2 md:space-x-3 text-white">
+            <div className="w-8 h-8 md:w-10 md:h-10 bg-white rounded-full flex items-center justify-center shadow-lg">
+              <span className="text-blue-900 font-bold text-sm md:text-lg">
+                B
+              </span>
+            </div>
+            <div>
+              <p className="text-xs md:text-sm font-semibold">Bedrock Agent</p>
+              <p className="text-xs text-blue-200 opacity-80">AI Assistant</p>
+            </div>
+          </div>
+        </div>
+      </div>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col bg-white/80 backdrop-blur-sm md:ml-0 h-[calc(100vh-64px)]">
