@@ -10,7 +10,6 @@ import {
   MoveRight,
   Play,
 } from "lucide-react";
-import UploadPdfButton from "./testupload";
 
 const KnowledgeBase = () => {
   const [files, setFiles] = useState(() => {
@@ -22,8 +21,6 @@ const KnowledgeBase = () => {
   });
   const [dragActive, setDragActive] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [extracting, setExtracting] = useState(false);
-  const [filex, setFilex] = useState(null);
 
   // Save files to localStorage whenever they change
   useEffect(() => {
@@ -32,8 +29,6 @@ const KnowledgeBase = () => {
 
   // Drag Handler
   const handleDrag = (e) => {
-    setFilex(e.target.files[0]);
-
     e.preventDefault();
     e.stopPropagation();
     if (e.type === "dragenter" || e.type === "dragover") {
@@ -56,30 +51,119 @@ const KnowledgeBase = () => {
   const handleFileUpload = async (fileList) => {
     setUploading(true);
 
-    const newFiles = Array.from(fileList).map((file) => ({
-      id: Date.now() + Math.random(),
-      name: file.name,
-      type: file.name.split(".").pop().toLowerCase(),
-      size: (file.size / (1024 * 1024)).toFixed(1) + " MB",
-      uploadDate: new Date().toISOString().split("T")[0],
-      status: "processing",
-      status1: "extracting",
-    }));
+    const LAMBDA_URL =
+      "https://oierktg9ae.execute-api.ap-southeast-1.amazonaws.com/bctc/upload";
 
-    setFiles((prev) => [...newFiles, ...prev]);
+    // 1️⃣ Create metadata first and show as "processing"
+    const newFileMetas = Array.from(fileList).map((file) => {
+      return {
+        id: Date.now() + Math.random(),
+        file, // keep the raw File object for later
+        name: file.name,
+        type: file.name.split(".").pop().toLowerCase(),
+        size: (file.size / (1024 * 1024)).toFixed(1) + " MB",
+        uploadDate: new Date().toISOString().split("T")[0],
+        status: "processing",
+      };
+    });
 
-    // Simulate processing time
-    setTimeout(() => {
-      setFiles((prev) =>
-        prev.map((file) =>
-          newFiles.some((nf) => nf.id === file.id)
-            ? { ...file, status: "processed" }
-            : file
-        )
-      );
-      setUploading(false);
-    }, 200);
+    // Show all files in UI immediately
+    setFiles((prev) => [...newFileMetas, ...prev]);
+
+    // 2️⃣ Process each file async and update status
+    for (const fileMeta of newFileMetas) {
+      try {
+        const res = await fetch(
+          `${LAMBDA_URL}?filename=${encodeURIComponent(fileMeta.name)}`
+        );
+        if (!res.ok) throw new Error("Failed to get presigned URL");
+
+        const { url } = await res.json();
+
+        const upload = await fetch(url, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/pdf",
+          },
+          body: fileMeta.file,
+        });
+
+        if (!upload.ok) throw new Error("Upload failed");
+
+        // 3️⃣ Update status to "processed"
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileMeta.id ? { ...f, status: "processed" } : f
+          )
+        );
+      } catch (err) {
+        console.error(`❌ Error uploading ${fileMeta.name}`, err);
+        setFiles((prev) =>
+          prev.map((f) =>
+            f.id === fileMeta.id ? { ...f, status: "failed" } : f
+          )
+        );
+      }
+    }
+
+    setUploading(false);
   };
+
+  // const handleFileUpload = async (fileList) => {
+  //   setUploading(true);
+
+  //   const LAMBDA_URL =
+  //     "https://ywyp18dj6c.execute-api.us-east-1.amazonaws.com/ulala/upload";
+
+  //   const newFiles = await Promise.all(
+  //     Array.from(fileList).map(async (file) => {
+  //       const id = Date.now() + Math.random();
+  //       const fileMeta = {
+  //         id,
+  //         name: file.name,
+  //         type: file.name.split(".").pop().toLowerCase(),
+  //         size: (file.size / (1024 * 1024)).toFixed(1) + " MB",
+  //         uploadDate: new Date().toISOString().split("T")[0],
+  //         status: "processing",
+  //       };
+
+  //       try {
+  //         // Step 1: Get presigned URL from Lambda
+  //         const res = await fetch(
+  //           `${LAMBDA_URL}?filename=${encodeURIComponent(file.name)}`
+  //         );
+  //         if (!res.ok)
+  //           throw new Error(`Failed to get presigned URL for ${file.name}`);
+  //         const { url } = await res.json();
+
+  //         // Step 2: Upload to S3
+  //         const upload = await fetch(url, {
+  //           method: "PUT",
+  //           headers: {
+  //             "Content-Type": "application/pdf",
+  //           },
+  //           body: file,
+  //         });
+
+  //         if (!upload.ok) {
+  //           const error = await upload.text();
+  //           console.error(`Upload failed for ${file.name}: ${error}`);
+  //           return { ...fileMeta, status: "failed" };
+  //         }
+
+  //         console.log(`✅ Uploaded ${file.name}`);
+  //         return { ...fileMeta, status: "processed" };
+  //       } catch (err) {
+  //         console.error(`❌ Error uploading ${file.name}`, err);
+  //         return { ...fileMeta, status: "failed" };
+  //       }
+  //     })
+  //   );
+
+  //   // Update state with all uploaded files
+  //   setFiles((prev) => [...newFiles, ...prev]);
+  //   setUploading(false);
+  // };
 
   const deleteFile = (fileId) => {
     setFiles((prev) => prev.filter((file) => file.id !== fileId));
@@ -92,63 +176,17 @@ const KnowledgeBase = () => {
     return <File className="h-5 w-5 text-gray-500" />;
   };
 
-  const getStatusBadge = (file) => {
-    const handleClickbuttest = async (file) => {
-      // console.log(file.name);
-      const LAMBDA_URL =
-        "https://ywyp18dj6c.execute-api.us-east-1.amazonaws.com/ulala/upload";
-      setExtracting(true);
-      try {
-        console.log("🔄 Requesting presigned URL...");
-
-        // Step 1: Get presigned URL from Lambda
-        const response = await fetch(
-          `${LAMBDA_URL}?filename=${encodeURIComponent(file.name)}`
-        );
-        if (!response.ok) throw new Error("Failed to get presigned URL");
-        const data = await response.json();
-        const presignedUrl = data.url;
-
-        // Step 2: Upload to S3 via presigned URL
-        console.log("⬆️ Uploading...");
-        const uploadRes = await fetch(presignedUrl, {
-          method: "PUT",
-          headers: {
-            "Content-Type": "application/pdf", // VERY important
-          },
-          body: file, // This must be the File object (raw binary)
-        });
-
-        if (!uploadRes.ok) {
-          const errorText = await uploadRes.text();
-          throw new Error(`Upload failed: ${uploadRes.status} - ${errorText}`);
-        }
-
-        console.log("✅ Upload successful!");
-      } catch (err) {
-        console.error(err);
-        console.log(`❌ Error: ${err.message}`);
-      }
-
-      setExtracting(false);
-    };
-
-    if (file.status === "processed") {
+  const getStatusBadge = (status) => {
+    if (status === "processed") {
       return (
         <div className="flex items-center gap-[10px]">
           <span className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
             Ready
           </span>
-          <button
-            onClick={handleClickbuttest}
-            className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full"
-          >
-            sync
-          </button>
         </div>
       );
     }
-    if (file.status === "processing") {
+    if (status === "processing") {
       return (
         <span className="px-2 py-1 text-xs font-medium bg-yellow-100 text-yellow-800 rounded-full">
           Processing
@@ -271,17 +309,6 @@ const KnowledgeBase = () => {
                 </div>
               </div>
             )}
-
-            {extracting && (
-              <div className="absolute inset-0 bg-white bg-opacity-90 flex items-center justify-center rounded-2xl">
-                <div className="text-center">
-                  <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-                  <p className="text-gray-600 font-medium">
-                    Extracting files...
-                  </p>
-                </div>
-              </div>
-            )}
           </div>
         </div>
 
@@ -328,7 +355,7 @@ const KnowledgeBase = () => {
                           <p className="text-sm text-gray-500">
                             Uploaded {file.uploadDate}
                           </p>
-                          {getStatusBadge(file)}
+                          {getStatusBadge(file.status)}
                         </div>
                       </div>
                     </div>
@@ -353,9 +380,6 @@ const KnowledgeBase = () => {
             </div>
           )}
         </div>
-
-        {/* xxx */}
-        <UploadPdfButton />
       </div>
     </div>
   );
