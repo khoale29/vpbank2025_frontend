@@ -199,6 +199,60 @@ const KnowledgeBase = () => {
       </span>
     );
   };
+
+  const [response, setResponse] = useState(null);
+  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [elapsed, setElapsed] = useState(0);
+
+  useEffect(() => {
+    let timer;
+    if (loading) {
+      timer = setInterval(() => {
+        setElapsed((prev) => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(timer);
+      setElapsed(0);
+    }
+    return () => clearInterval(timer);
+  }, [loading]);
+
+  const handlePost = async () => {
+    setLoading(true);
+    setError(null);
+    setResponse(null);
+
+    try {
+      const res = await fetch(
+        "https://lkmx3bab63lkjzo7n2oixnjb3m0xzytp.lambda-url.ap-southeast-1.on.aws/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            bucket: "testworkflow123",
+            prefix: "pdf/vlg",
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("Lambda Response:", data);
+      setResponse(data);
+    } catch (err) {
+      console.error("Error posting to Lambda:", err);
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-64px)] bg-gray-50">
       <div className="max-w-6xl mx-auto p-6">
@@ -217,6 +271,27 @@ const KnowledgeBase = () => {
         </div>
 
         {/* Agent monitor */}
+
+        {loading && (
+          <div className="mt-2 text-sm text-gray-600">
+            Waiting for response... ({elapsed}s)
+            {elapsed > 60 && (
+              <div className="text-yellow-600">⚠️ Still running...</div>
+            )}
+          </div>
+        )}
+        {response && (
+          <div className="mt-4 p-2 bg-green-100 border border-green-300 rounded">
+            <pre>{JSON.stringify(response, null, 2)}</pre>
+          </div>
+        )}
+
+        {error && (
+          <div className="mt-4 p-2 bg-red-100 border border-red-300 rounded">
+            <strong>Error:</strong> {error}
+          </div>
+        )}
+
         <div className="border-2 rounded-2xl border-gray-400 p-6 w-full flex justify-center items-center min-h-[300px] bg-white mb-8">
           <div className="flex items-center gap-2">
             <div className="flex flex-col items-center">
@@ -263,7 +338,10 @@ const KnowledgeBase = () => {
           </div>
         </div>
         <div className="flex justify-center">
-          <button className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-500 text-white mb-8">
+          <button
+            className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-500 text-white mb-8"
+            onClick={handlePost}
+          >
             <Play className="w-6 h-6" />
           </button>
         </div>
