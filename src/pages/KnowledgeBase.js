@@ -266,7 +266,7 @@ const KnowledgeBase = () => {
 
     try {
       const res = await fetch(
-        "https://qhm4h4igpznxtnastypdugohna0zlbxv.lambda-url.ap-southeast-1.on.aws/"
+        "https://5dt355crrhr3vvinnhpg2dcrgq0kzqfu.lambda-url.ap-southeast-1.on.aws/"
       );
 
       if (!res.ok) {
@@ -305,7 +305,7 @@ const KnowledgeBase = () => {
 
     try {
       const res = await fetch(
-        "https://lkmx3bab63lkjzo7n2oixnjb3m0xzytp.lambda-url.ap-southeast-1.on.aws/",
+        "https://qhm4h4igpznxtnastypdugohna0zlbxv.lambda-url.ap-southeast-1.on.aws/",
         {
           method: "POST",
           headers: {
