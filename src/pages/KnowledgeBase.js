@@ -111,62 +111,6 @@ const KnowledgeBase = () => {
     setUploading(false);
   };
 
-  // const handleFileUpload = async (fileList) => {
-  //   setUploading(true);
-
-  //   const LAMBDA_URL =
-  //     "https://ywyp18dj6c.execute-api.us-east-1.amazonaws.com/ulala/upload";
-
-  //   const newFiles = await Promise.all(
-  //     Array.from(fileList).map(async (file) => {
-  //       const id = Date.now() + Math.random();
-  //       const fileMeta = {
-  //         id,
-  //         name: file.name,
-  //         type: file.name.split(".").pop().toLowerCase(),
-  //         size: (file.size / (1024 * 1024)).toFixed(1) + " MB",
-  //         uploadDate: new Date().toISOString().split("T")[0],
-  //         status: "processing",
-  //       };
-
-  //       try {
-  //         // Step 1: Get presigned URL from Lambda
-  //         const res = await fetch(
-  //           `${LAMBDA_URL}?filename=${encodeURIComponent(file.name)}`
-  //         );
-  //         if (!res.ok)
-  //           throw new Error(`Failed to get presigned URL for ${file.name}`);
-  //         const { url } = await res.json();
-
-  //         // Step 2: Upload to S3
-  //         const upload = await fetch(url, {
-  //           method: "PUT",
-  //           headers: {
-  //             "Content-Type": "application/pdf",
-  //           },
-  //           body: file,
-  //         });
-
-  //         if (!upload.ok) {
-  //           const error = await upload.text();
-  //           console.error(`Upload failed for ${file.name}: ${error}`);
-  //           return { ...fileMeta, status: "failed" };
-  //         }
-
-  //         console.log(`✅ Uploaded ${file.name}`);
-  //         return { ...fileMeta, status: "processed" };
-  //       } catch (err) {
-  //         console.error(`❌ Error uploading ${file.name}`, err);
-  //         return { ...fileMeta, status: "failed" };
-  //       }
-  //     })
-  //   );
-
-  //   // Update state with all uploaded files
-  //   setFiles((prev) => [...newFiles, ...prev]);
-  //   setUploading(false);
-  // };
-
   const deleteFile = (fileId) => {
     setFiles((prev) => prev.filter((file) => file.id !== fileId));
   };
@@ -341,6 +285,106 @@ const KnowledgeBase = () => {
     }
   };
 
+  useEffect(() => {
+    let timer;
+    if (loadingagent3) {
+      timer = setInterval(() => {
+        setElapsedagent3((prev) => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(timer);
+      setElapsedagent3(0);
+    }
+    return () => clearInterval(timer);
+  }, [loadingagent3]);
+
+  const handlePostagent3 = async () => {
+    setLoadingagent3(true);
+    setErroragent3(false);
+    setResponseagent3(null);
+
+    try {
+      const res = await fetch(
+        "https://lkmx3bab63lkjzo7n2oixnjb3m0xzytp.lambda-url.ap-southeast-1.on.aws/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            bucket: "testworkflow123",
+            prefix: "pdf/vlg",
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("Lambda Response:", data);
+      setResponseagent3(data);
+      setLoadingagent3(false);
+      // ✅ Call Agent 4 only if Agent 3 succeeded
+      await handlePostagent4();
+    } catch (err) {
+      console.error("Error posting to Lambda:", err);
+      setErroragent3(err.message);
+    } finally {
+      setLoadingagent3(false);
+    }
+  };
+
+  useEffect(() => {
+    let timer;
+    if (loadingagent4) {
+      timer = setInterval(() => {
+        setElapsedagent4((prev) => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(timer);
+      setElapsedagent4(0);
+    }
+    return () => clearInterval(timer);
+  }, [loadingagent4]);
+
+  const handlePostagent4 = async () => {
+    setLoadingagent4(true);
+    setErroragent4(false);
+    setResponseagent4(null);
+
+    try {
+      const res = await fetch(
+        "https://lkmx3bab63lkjzo7n2oixnjb3m0xzytp.lambda-url.ap-southeast-1.on.aws/",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            bucket: "testworkflow123",
+            prefix: "pdf/vlg",
+          }),
+        }
+      );
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
+      }
+
+      const data = await res.json();
+      console.log("Lambda Response:", data);
+      setResponseagent4(data);
+      setLoadingagent4(false);
+    } catch (err) {
+      console.error("Error posting to Lambda:", err);
+      setErroragent4(err.message);
+    } finally {
+      setLoadingagent4(false);
+    }
+  };
+
   return (
     <div className="min-h-[calc(100vh-64px)] bg-gray-50">
       <div className="max-w-6xl mx-auto p-6">
@@ -506,7 +550,7 @@ const KnowledgeBase = () => {
         <div className="flex justify-center">
           <button
             className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-500 text-white mb-8"
-            onClick={handlePostagent2}
+            onClick={handlePostagent1}
           >
             <Play className="w-6 h-6" />
           </button>
