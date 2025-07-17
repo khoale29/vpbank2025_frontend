@@ -8,6 +8,7 @@ import {
   Trash2,
   Edit3,
 } from "lucide-react";
+import DownloadPDF from "./DownLoadPdf";
 
 import { sendMessageToAgent } from "../components/sendMessageToAgent";
 
@@ -589,6 +590,7 @@ const ChatInterface = () => {
               >
                 <Send className="h-5 w-5" />
               </button>
+              <DownloadPDF />
             </div>
           </div>
         </div>
