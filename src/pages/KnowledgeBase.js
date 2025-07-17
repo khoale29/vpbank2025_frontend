@@ -215,12 +215,9 @@ const KnowledgeBase = () => {
 
     try {
       const res = await fetch(
-        "https://lkmx3bab63lkjzo7n2oixnjb3m0xzytp.lambda-url.ap-southeast-1.on.aws/",
+        "https://6iqctlpcj4ox242bii4z3klxdu0ymdaz.lambda-url.ap-southeast-1.on.aws/",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
           body: JSON.stringify({
             bucket: "testworkflow123",
             prefix: "pdf/vlg",
@@ -266,7 +263,10 @@ const KnowledgeBase = () => {
 
     try {
       const res = await fetch(
-        "https://5dt355crrhr3vvinnhpg2dcrgq0kzqfu.lambda-url.ap-southeast-1.on.aws/"
+        "https://5dt355crrhr3vvinnhpg2dcrgq0kzqfu.lambda-url.ap-southeast-1.on.aws/",
+        {
+          method: "POST",
+        }
       );
 
       if (!res.ok) {
@@ -308,25 +308,24 @@ const KnowledgeBase = () => {
         "https://qhm4h4igpznxtnastypdugohna0zlbxv.lambda-url.ap-southeast-1.on.aws/",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            bucket: "testworkflow123",
-            prefix: "pdf/vlg",
-          }),
         }
       );
 
       if (!res.ok) {
         throw new Error(`HTTP error! Status: ${res.status}`);
       }
+      const text = await res.text();
+      console.log("Lambda Raw Response:", text);
 
-      const data = await res.json();
-      console.log("Lambda Response:", data);
-      setResponseagent3(data);
-      setLoadingagent3(false);
-      // ✅ Call Agent 4 only if Agent 3 succeeded
+      let parsed;
+      try {
+        parsed = JSON.parse(text); // Try parsing as JSON (if body is a JSON string)
+      } catch (e) {
+        // If plain text, wrap it in an object
+        parsed = { message: text };
+      }
+
+      setResponseagent3(parsed);
       await handlePostagent4();
     } catch (err) {
       console.error("Error posting to Lambda:", err);
@@ -490,9 +489,9 @@ const KnowledgeBase = () => {
                   loadingagent3
                 )}
               >
-                {responseagent3 && (
-                  <div className="mt-4 p-2 bg-green-100 border border-green-300 rounded w-[600px] h-[400px] overflow-auto">
-                    <pre>{JSON.stringify(responseagent3, null, 2)}</pre>
+                {responseagent3?.message && (
+                  <div className="mt-4 p-2 bg-green-100 border border-green-300 rounded w-[600px] h-[400px] overflow-auto whitespace-pre-wrap font-mono text-sm">
+                    {responseagent3.message}
                   </div>
                 )}
                 {loadingagent3 && (
@@ -550,7 +549,7 @@ const KnowledgeBase = () => {
         <div className="flex justify-center">
           <button
             className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-500 text-white mb-8"
-            onClick={handlePostagent1}
+            onClick={handlePostagent2}
           >
             <Play className="w-6 h-6" />
           </button>
