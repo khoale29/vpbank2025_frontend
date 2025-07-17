@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 export default function Login() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  // const [error, setError] = useState("");
   const auth = useAuth();
   const navigate = useNavigate();
 
@@ -24,7 +24,7 @@ export default function Login() {
       <div className="bg-white p-8 rounded-xl shadow-md w-full max-w-sm">
         <h2 className="text-2xl font-bold text-center mb-6">Login</h2>
 
-        {error && <p className="text-red-500 text-sm mb-4">{error}</p>}
+        {/* {error && <p className="text-red-500 text-sm mb-4">{error}</p>} */}
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>

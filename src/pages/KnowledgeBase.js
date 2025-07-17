@@ -11,6 +11,8 @@ import {
   Play,
 } from "lucide-react";
 
+import Popup from "reactjs-popup";
+
 const KnowledgeBase = () => {
   const [files, setFiles] = useState(() => {
     const saved = localStorage.getItem("financial_report"); //financial_report englishAI_knowledgeBase
@@ -200,28 +202,72 @@ const KnowledgeBase = () => {
     );
   };
 
-  const [response, setResponse] = useState(null);
-  const [error, setError] = useState(null);
-  const [loading, setLoading] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
+  const getStatusprocess = (responsea, errora, loadinga) => {
+    if (responsea) {
+      return (
+        <button className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
+          success
+        </button>
+      );
+    }
+    if (loadinga) {
+      return (
+        <button className="px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+          proccessing
+        </button>
+      );
+    }
+    if (errora) {
+      return (
+        <button className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
+          failed
+        </button>
+      );
+    }
+    return (
+      <button className="px-2 py-1 text-xs font-medium bg-gray-100 text-black-800 rounded-full">
+        waiting
+      </button>
+    );
+  };
+
+  const [responseagent1, setResponseagent1] = useState(null);
+  const [erroragent1, setErroragent1] = useState(null);
+  const [loadingagent1, setLoadingagent1] = useState(false);
+  const [elapsedagent1, setElapsedagent1] = useState(0);
+
+  const [responseagent2, setResponseagent2] = useState(null);
+  const [erroragent2, setErroragent2] = useState(null);
+  const [loadingagent2, setLoadingagent2] = useState(false);
+  const [elapsedagent2, setElapsedagent2] = useState(0);
+
+  const [responseagent3, setResponseagent3] = useState(null);
+  const [erroragent3, setErroragent3] = useState(null);
+  const [loadingagent3, setLoadingagent3] = useState(false);
+  const [elapsedagent3, setElapsedagent3] = useState(0);
+
+  const [responseagent4, setResponseagent4] = useState(null);
+  const [erroragent4, setErroragent4] = useState(null);
+  const [loadingagent4, setLoadingagent4] = useState(false);
+  const [elapsedagent4, setElapsedagent4] = useState(0);
 
   useEffect(() => {
     let timer;
-    if (loading) {
+    if (loadingagent1) {
       timer = setInterval(() => {
-        setElapsed((prev) => prev + 1);
+        setElapsedagent1((prev) => prev + 1);
       }, 1000);
     } else {
       clearInterval(timer);
-      setElapsed(0);
+      setElapsedagent1(0);
     }
     return () => clearInterval(timer);
-  }, [loading]);
+  }, [loadingagent1]);
 
-  const handlePost = async () => {
-    setLoading(true);
-    setError(null);
-    setResponse(null);
+  const handlePostagent1 = async () => {
+    setLoadingagent1(true);
+    setErroragent1(false);
+    setResponseagent1(null);
 
     try {
       const res = await fetch(
@@ -244,12 +290,54 @@ const KnowledgeBase = () => {
 
       const data = await res.json();
       console.log("Lambda Response:", data);
-      setResponse(data);
+      setResponseagent1(data);
+      setLoadingagent1(false);
+      // ✅ Call Agent 2 only if Agent 1 succeeded
+      await handlePostagent2();
     } catch (err) {
       console.error("Error posting to Lambda:", err);
-      setError(err.message);
+      setErroragent1(err.message);
     } finally {
-      setLoading(false);
+      setLoadingagent1(false);
+    }
+  };
+
+  useEffect(() => {
+    let timer;
+    if (loadingagent2) {
+      timer = setInterval(() => {
+        setElapsedagent2((prev) => prev + 1);
+      }, 1000);
+    } else {
+      clearInterval(timer);
+      setElapsedagent2(0);
+    }
+    return () => clearInterval(timer);
+  }, [loadingagent2]);
+
+  const handlePostagent2 = async () => {
+    setLoadingagent2(true);
+    setErroragent2(false);
+    setResponseagent2(null);
+
+    try {
+      const res = await fetch(
+        "https://qhm4h4igpznxtnastypdugohna0zlbxv.lambda-url.ap-southeast-1.on.aws/"
+      );
+
+      if (!res.ok) {
+        throw new Error(`HTTP error! Status: ${res.status}`);
+      }
+      const data = await res.json();
+      console.log("Lambda Response:", data);
+      setResponseagent2(data);
+
+      setLoadingagent2(false);
+    } catch (err) {
+      console.error("Error posting to Lambda:", err);
+      setErroragent2(err.message);
+    } finally {
+      setLoadingagent2(false);
     }
   };
 
@@ -272,35 +360,40 @@ const KnowledgeBase = () => {
 
         {/* Agent monitor */}
 
-        {loading && (
-          <div className="mt-2 text-sm text-gray-600">
-            Waiting for response... ({elapsed}s)
-            {elapsed > 60 && (
-              <div className="text-yellow-600">⚠️ Still running...</div>
-            )}
-          </div>
-        )}
-        {response && (
-          <div className="mt-4 p-2 bg-green-100 border border-green-300 rounded">
-            <pre>{JSON.stringify(response, null, 2)}</pre>
-          </div>
-        )}
-
-        {error && (
-          <div className="mt-4 p-2 bg-red-100 border border-red-300 rounded">
-            <strong>Error:</strong> {error}
-          </div>
-        )}
-
         <div className="border-2 rounded-2xl border-gray-400 p-6 w-full flex justify-center items-center min-h-[300px] bg-white mb-8">
           <div className="flex items-center gap-2">
             <div className="flex flex-col items-center">
               <div className="w-60 h-24 border-2 border-black rounded-2xl flex justify-center items-center font-medium mb-2">
                 🤖 Document Extractor
               </div>
-              <button className="px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded-full">
-                success
-              </button>
+
+              <Popup
+                modal
+                trigger={getStatusprocess(
+                  responseagent1,
+                  erroragent1,
+                  loadingagent1
+                )}
+              >
+                {responseagent1 && (
+                  <div className="mt-4 p-2 bg-green-100 border border-green-300 rounded w-[600px] h-[400px] overflow-auto">
+                    <pre>{JSON.stringify(responseagent1, null, 2)}</pre>
+                  </div>
+                )}
+                {loadingagent1 && (
+                  <div className="mt-4 p-2 bg-gray-100 border border-gray-300 rounded w-[600px] h-[400px] overflow-auto">
+                    Waiting for response... ({elapsedagent1}s)
+                    {elapsedagent1 > 60 && (
+                      <div className="text-yellow-600">⚠️ Still running...</div>
+                    )}
+                  </div>
+                )}
+                {erroragent1 && (
+                  <div className="mt-4 p-2 bg-red-100 border border-red-300 rounded w-[600px] h-[400px] overflow-auto">
+                    <strong>Error:</strong> {erroragent1}
+                  </div>
+                )}
+              </Popup>
             </div>
             <div className="text-2xl font-bold">
               <MoveRight />
@@ -309,9 +402,33 @@ const KnowledgeBase = () => {
               <div className="w-60 h-24 border-2 border-black rounded-2xl flex justify-center items-center font-medium mb-2">
                 🤖 Information Checking
               </div>
-              <button className="px-2 py-1 text-xs font-medium bg-red-100 text-red-800 rounded-full">
-                failed
-              </button>
+              <Popup
+                modal
+                trigger={getStatusprocess(
+                  responseagent2,
+                  erroragent2,
+                  loadingagent2
+                )}
+              >
+                {responseagent2 && (
+                  <div className="mt-4 p-2 bg-green-100 border border-green-300 rounded w-[600px] h-[400px] overflow-auto">
+                    <pre>{JSON.stringify(responseagent2, null, 2)}</pre>
+                  </div>
+                )}
+                {loadingagent2 && (
+                  <div className="mt-4 p-2 bg-gray-100 border border-gray-300 rounded w-[600px] h-[400px] overflow-auto">
+                    Waiting for response... ({elapsedagent2}s)
+                    {elapsedagent2 > 60 && (
+                      <div className="text-yellow-600">⚠️ Still running...</div>
+                    )}
+                  </div>
+                )}
+                {erroragent2 && (
+                  <div className="mt-4 p-2 bg-red-100 border border-red-300 rounded w-[600px] h-[400px] overflow-auto">
+                    <strong>Error:</strong> {erroragent2}
+                  </div>
+                )}
+              </Popup>
             </div>
             <div className="text-2xl font-bold">
               <MoveRight />
@@ -320,9 +437,34 @@ const KnowledgeBase = () => {
               <div className="w-60 h-24 border-2 border-black rounded-2xl flex justify-center items-center font-medium mb-2">
                 🤖 Financial Analyst
               </div>
-              <button className="px-2 py-1 text-xs font-medium bg-gray-100 text-black-800 rounded-full">
-                waiting
-              </button>
+
+              <Popup
+                modal
+                trigger={getStatusprocess(
+                  responseagent3,
+                  erroragent3,
+                  loadingagent3
+                )}
+              >
+                {responseagent3 && (
+                  <div className="mt-4 p-2 bg-green-100 border border-green-300 rounded w-[600px] h-[400px] overflow-auto">
+                    <pre>{JSON.stringify(responseagent3, null, 2)}</pre>
+                  </div>
+                )}
+                {loadingagent3 && (
+                  <div className="mt-4 p-2 bg-gray-100 border border-gray-300 rounded w-[600px] h-[400px] overflow-auto">
+                    Waiting for response... ({elapsedagent3}s)
+                    {elapsedagent3 > 60 && (
+                      <div className="text-yellow-600">⚠️ Still running...</div>
+                    )}
+                  </div>
+                )}
+                {erroragent3 && (
+                  <div className="mt-4 p-2 bg-red-100 border border-red-300 rounded w-[600px] h-[400px] overflow-auto">
+                    <strong>Error:</strong> {erroragent3}
+                  </div>
+                )}
+              </Popup>
             </div>
             <div className="text-2xl font-bold">
               <MoveRight />
@@ -331,16 +473,40 @@ const KnowledgeBase = () => {
               <div className="w-60 h-24 border-2 border-black rounded-2xl flex justify-center items-center font-medium mb-2">
                 🤖 Risk Evaluator
               </div>
-              <button className="px-2 py-1 text-xs font-medium bg-gray-100 text-black-800 rounded-full">
-                waiting
-              </button>
+              <Popup
+                modal
+                trigger={getStatusprocess(
+                  responseagent4,
+                  erroragent4,
+                  loadingagent4
+                )}
+              >
+                {responseagent4 && (
+                  <div className="mt-4 p-2 bg-green-100 border border-green-300 rounded w-[600px] h-[400px] overflow-auto">
+                    <pre>{JSON.stringify(responseagent4, null, 2)}</pre>
+                  </div>
+                )}
+                {loadingagent4 && (
+                  <div className="mt-4 p-2 bg-gray-100 border border-gray-300 rounded w-[600px] h-[400px] overflow-auto">
+                    Waiting for response... ({elapsedagent4}s)
+                    {elapsedagent4 > 60 && (
+                      <div className="text-yellow-600">⚠️ Still running...</div>
+                    )}
+                  </div>
+                )}
+                {erroragent4 && (
+                  <div className="mt-4 p-2 bg-red-100 border border-red-300 rounded w-[600px] h-[400px] overflow-auto">
+                    <strong>Error:</strong> {erroragent4}
+                  </div>
+                )}
+              </Popup>
             </div>
           </div>
         </div>
         <div className="flex justify-center">
           <button
             className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-500 text-white mb-8"
-            onClick={handlePost}
+            onClick={handlePostagent2}
           >
             <Play className="w-6 h-6" />
           </button>
