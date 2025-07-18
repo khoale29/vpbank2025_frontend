@@ -263,9 +263,13 @@ const KnowledgeBase = () => {
 
     try {
       const res = await fetch(
-        "https://5dt355crrhr3vvinnhpg2dcrgq0kzqfu.lambda-url.ap-southeast-1.on.aws/",
+        "https://6iqctlpcj4ox242bii4z3klxdu0ymdaz.lambda-url.ap-southeast-1.on.aws/",
         {
           method: "POST",
+          body: JSON.stringify({
+            bucket: "testworkflow123",
+            prefix: "pdf/vlg",
+          }),
         }
       );
 
@@ -277,6 +281,9 @@ const KnowledgeBase = () => {
       setResponseagent2(data);
 
       setLoadingagent2(false);
+
+      // ✅ Call Agent 2 only if Agent 1 succeeded
+      await handlePostagent3();
     } catch (err) {
       console.error("Error posting to Lambda:", err);
       setErroragent2(err.message);
@@ -355,16 +362,9 @@ const KnowledgeBase = () => {
 
     try {
       const res = await fetch(
-        "https://lkmx3bab63lkjzo7n2oixnjb3m0xzytp.lambda-url.ap-southeast-1.on.aws/",
+        "https://n7a5b3f5lm4wke52pfqo5clo4i0rhcse.lambda-url.ap-southeast-1.on.aws/",
         {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            bucket: "testworkflow123",
-            prefix: "pdf/vlg",
-          }),
         }
       );
 
@@ -434,6 +434,14 @@ const KnowledgeBase = () => {
                 {erroragent1 && (
                   <div className="mt-4 p-2 bg-red-100 border border-red-300 rounded w-[600px] h-[400px] overflow-auto">
                     <strong>Error:</strong> {erroragent1}
+                    <div className="mt-2">
+                      <button
+                        onClick={handlePostagent1}
+                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                      >
+                        Retry
+                      </button>
+                    </div>
                   </div>
                 )}
               </Popup>
@@ -469,6 +477,14 @@ const KnowledgeBase = () => {
                 {erroragent2 && (
                   <div className="mt-4 p-2 bg-red-100 border border-red-300 rounded w-[600px] h-[400px] overflow-auto">
                     <strong>Error:</strong> {erroragent2}
+                    <div className="mt-2">
+                      <button
+                        onClick={handlePostagent2}
+                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                      >
+                        Retry
+                      </button>
+                    </div>
                   </div>
                 )}
               </Popup>
@@ -504,7 +520,16 @@ const KnowledgeBase = () => {
                 )}
                 {erroragent3 && (
                   <div className="mt-4 p-2 bg-red-100 border border-red-300 rounded w-[600px] h-[400px] overflow-auto">
-                    <strong>Error:</strong> {erroragent3}
+                    <strong>Error:</strong>
+                    {erroragent3}
+                    <div className="mt-2">
+                      <button
+                        onClick={handlePostagent3}
+                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                      >
+                        Retry
+                      </button>
+                    </div>
                   </div>
                 )}
               </Popup>
@@ -540,6 +565,14 @@ const KnowledgeBase = () => {
                 {erroragent4 && (
                   <div className="mt-4 p-2 bg-red-100 border border-red-300 rounded w-[600px] h-[400px] overflow-auto">
                     <strong>Error:</strong> {erroragent4}
+                    <div className="mt-2">
+                      <button
+                        onClick={handlePostagent4}
+                        className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+                      >
+                        Retry
+                      </button>
+                    </div>
                   </div>
                 )}
               </Popup>
@@ -549,7 +582,7 @@ const KnowledgeBase = () => {
         <div className="flex justify-center">
           <button
             className="flex items-center justify-center w-16 h-16 rounded-full bg-blue-500 text-white mb-8"
-            onClick={handlePostagent2}
+            onClick={handlePostagent1}
           >
             <Play className="w-6 h-6" />
           </button>
