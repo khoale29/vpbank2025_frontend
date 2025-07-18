@@ -365,6 +365,7 @@ const KnowledgeBase = () => {
         "https://n7a5b3f5lm4wke52pfqo5clo4i0rhcse.lambda-url.ap-southeast-1.on.aws/",
         {
           method: "POST",
+          body: JSON.stringify({}), // Or put actual input here if needed
         }
       );
 
@@ -372,8 +373,10 @@ const KnowledgeBase = () => {
         throw new Error(`HTTP error! Status: ${res.status}`);
       }
 
-      const data = await res.json();
+      const data = await res.text();
+
       console.log("Lambda Response:", data);
+
       setResponseagent4(data);
       setLoadingagent4(false);
     } catch (err) {
@@ -550,7 +553,7 @@ const KnowledgeBase = () => {
                 )}
               >
                 {responseagent4 && (
-                  <div className="mt-4 p-2 bg-green-100 border border-green-300 rounded w-[600px] h-[400px] overflow-auto">
+                  <div className="mt-4 p-2 bg-green-100 border border-green-300 rounded w-[600px] h-[400px] overflow-auto whitespace-pre-line">
                     <pre>{JSON.stringify(responseagent4, null, 2)}</pre>
                   </div>
                 )}

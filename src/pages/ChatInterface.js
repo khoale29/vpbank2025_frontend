@@ -92,7 +92,6 @@ const ChatInterface = () => {
 
   const handleSendMessage = async (message = null) => {
     try {
-      // Ensure we always have a string to work with
       let textToSend = "";
 
       if (message !== null && message !== undefined) {
@@ -101,16 +100,7 @@ const ChatInterface = () => {
         textToSend = String(inputMessage);
       }
 
-      console.log("handleSendMessage called with:", {
-        message,
-        inputMessage,
-        textToSend,
-        messageType: typeof message,
-        inputMessageType: typeof inputMessage,
-      });
-
-      // Safe trim check
-      if (!textToSend || typeof textToSend !== "string" || !textToSend.trim()) {
+      if (!textToSend || !textToSend.trim()) {
         console.log("Message is empty or invalid, not sending");
         return;
       }
@@ -124,70 +114,59 @@ const ChatInterface = () => {
         timestamp: new Date(),
       };
 
-      // Update current conversation with new message and generate title if it's the first user message
+      // Add user message
       setConversations((prev) =>
-        prev.map((conv) => {
-          if (conv.id === currentConversationId) {
-            const isFirstUserMessage = conv.messages.length === 1; // Only has the initial AI greeting
-            const newTitle = isFirstUserMessage
-              ? textToSend.length > 50
-                ? textToSend.substring(0, 50) + "..."
-                : textToSend
-              : conv.title;
-
-            return {
-              ...conv,
-              title: newTitle,
-              messages: [...conv.messages, userMessage],
-              lastMessage: textToSend,
-              timestamp: new Date().toLocaleString(),
-            };
-          }
-          return conv;
-        })
+        prev.map((conv) =>
+          conv.id === currentConversationId
+            ? {
+                ...conv,
+                title:
+                  conv.messages.length === 1
+                    ? textToSend.length > 50
+                      ? textToSend.substring(0, 50) + "..."
+                      : textToSend
+                    : conv.title,
+                messages: [...conv.messages, userMessage],
+                lastMessage: textToSend,
+                timestamp: new Date().toLocaleString(),
+              }
+            : conv
+        )
       );
 
-      const currentConv = conversations.find(
-        (c) => c.id === currentConversationId
-      );
       setInputMessage("");
       setIsLoading(true);
 
       try {
-        console.log("Making API call to agent...");
-        // Use the Bedrock agent API
         const response = await fetch(
-          "https://4j4vji7vs8.execute-api.us-east-1.amazonaws.com/dev/chch",
-          // "https://3nnv47ziimr3xj7cmklvzxjxvy0lvewr.lambda-url.ap-southeast-1.on.aws/",
+          "https://3nnv47ziimr3xj7cmklvzxjxvy0lvewr.lambda-url.ap-southeast-1.on.aws/",
           {
             method: "POST",
-            body: JSON.stringify({
-              message: textToSend,
-            }),
+            body: JSON.stringify({ text: textToSend }),
           }
         );
 
         const result = await response.json();
-        const parsed =
-          typeof result.body === "string" ? JSON.parse(result.body) : result;
-        const aiMessageText = parsed.response;
-        console.log("Agent response received:", aiMessageText);
+
+        // ✅ Parse nested string body
+        const parsedBody =
+          typeof result.body === "string"
+            ? JSON.parse(result.body)
+            : result.body;
 
         const aiMessage = {
           id: Date.now() + 1,
-          text: aiMessageText,
+          text: parsedBody,
           sender: "ai",
           timestamp: new Date(),
         };
 
-        // Add AI response to conversation and update sessionId
         setConversations((prev) =>
           prev.map((conv) =>
             conv.id === currentConversationId
               ? {
                   ...conv,
                   messages: [...conv.messages, aiMessage],
-                  sessionId: response.sessionId,
                 }
               : conv
           )
