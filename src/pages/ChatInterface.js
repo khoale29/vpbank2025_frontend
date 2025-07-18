@@ -154,15 +154,11 @@ const ChatInterface = () => {
       setIsLoading(true);
 
       try {
-        if (!textToSend || textToSend.trim() === "") {
-          console.error("Message is empty, cannot send to agent.");
-          return;
-        }
-
         console.log("Making API call to agent...");
-
+        // Use the Bedrock agent API
         const response = await fetch(
-          "https://3nnv47ziimr3xj7cmklvzxjxvy0lvewr.lambda-url.ap-southeast-1.on.aws/",
+          "https://4j4vji7vs8.execute-api.us-east-1.amazonaws.com/dev/chch",
+          // "https://3nnv47ziimr3xj7cmklvzxjxvy0lvewr.lambda-url.ap-southeast-1.on.aws/",
           {
             method: "POST",
             body: JSON.stringify({
@@ -175,6 +171,7 @@ const ChatInterface = () => {
         const parsed =
           typeof result.body === "string" ? JSON.parse(result.body) : result;
         const aiMessageText = parsed.response;
+        console.log("Agent response received:", aiMessageText);
 
         const aiMessage = {
           id: Date.now() + 1,
